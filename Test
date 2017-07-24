@@ -1,0 +1,106 @@
+package org.academy;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.text.BreakIterator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.text.BreakIterator.*;
+
+public class Test {
+
+    private static Map<String, AtomicInteger> mapOfWords = new HashMap<>();
+    private static String stringWithHighestOccurence = "";
+    private static long numberOfOccurencesOfString = 0;
+
+    private static Map<Character, AtomicInteger> mapOfCharacters = new HashMap<>();
+    private static char charWithHighestOccurence;
+    private static long numberOfOccurencesChar = 0;
+
+    private static String longestWord = "";
+
+
+    public static void main(String[] args) throws Exception {
+
+        URL oracle = new URL(args[0]);
+
+        String inputLine;
+        BreakIterator breakIterator = getWordInstance();
+
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(oracle.openStream()))) {
+
+            while ((inputLine = br.readLine()) != null){
+                extract(inputLine.replaceAll("\\<.*?>","").trim(), breakIterator);
+            }
+        }
+
+        System.out.println("-----------------------------------------------------");
+        System.out.println(longestWord);
+        System.out.println(stringWithHighestOccurence +" :" + numberOfOccurencesOfString);
+        System.out.println(charWithHighestOccurence +" :" + numberOfOccurencesChar);
+
+    }
+
+    private static void extract(String target, BreakIterator wordIterator) {
+        if("".equals(target.trim())) {
+            return;
+        }
+        if(target.equals("\n")) return;
+
+        //maybe also check &nbsp;
+
+        wordIterator.setText(target);
+        int start = wordIterator.first();
+        int end = wordIterator.next();
+
+        while (end != DONE) {
+            String word = target.substring(start,end);
+            word = word.replaceAll("[^a-zA-Z]", "");
+
+            if("".equals(word.trim())){
+                break;
+            }
+            System.out.println("'" + word + "'");
+
+            if(longestWord.length() < word.length()){
+                longestWord = word;
+            }
+
+            if(mapOfWords.containsKey(word)){
+
+                int i = mapOfWords.get(word).incrementAndGet();
+                if(i > numberOfOccurencesOfString){
+                    numberOfOccurencesOfString = i;
+                    stringWithHighestOccurence = word;
+                }
+            } else {
+                mapOfWords.put(word, new AtomicInteger(1));
+            }
+
+            for(int i = 0; i < word.length(); i++){
+                char c = word.charAt(i);
+
+                if( ! Character.isAlphabetic(c)){
+                    break;
+                }
+
+                if(mapOfCharacters.containsKey(c)){
+                    int j = mapOfCharacters.get(c).incrementAndGet();
+                    if(i > numberOfOccurencesChar){
+                        numberOfOccurencesChar = i;
+                        charWithHighestOccurence = c;
+                    }
+
+                }else{
+                    mapOfCharacters.put(c, new AtomicInteger(1));
+                }
+            }
+            start = end;
+            end = wordIterator.next();
+        }
+    }
+}
